@@ -34,14 +34,27 @@ classdef clog < handle
     
     properties(SetAccess = protected)
         logLevel = clog.INFO; %Default Log Level
+        fileLogLevel = clog.ALL; %Default File Log Level
+        fullpath = 'clog.log';  %Default File              
     end
  
 %% Public Static Methods Section %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
     methods (Static)
-        function obj = getLogger( ~ )           
+        function obj = getLogger( logPath )          
+            % FileLogger
+            if(nargin == 0)
+                logPath = 'clog.log';
+            elseif(nargin > 1)
+                error('Only one parameter is used for log file.');
+            end
+            
             persistent logger;
             if isempty(logger) || ~isvalid(logger)
-                logger = clog( );
+                if ( nargin > 0 )
+                    logger = clog( logPath );
+                else
+                    logger = clog( );
+                end
             end
             obj = logger;
         end
@@ -51,6 +64,21 @@ classdef clog < handle
     
 %% Public Methods Section %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods       
+
+        function setFilename(self,logPath)
+            [fid,message] = fopen(logPath, 'a');
+            
+            if(fid < 0)
+                error(['Verify logfile path: ' message]);
+            end
+            fclose(fid);
+            
+            self.fullpath = logPath;
+        end
+
+        function setFileLogLevel(self,logLevel)
+            self.fileLogLevel = logLevel;
+        end
 
         function setLogLevel(self,logLevel)
             self.logLevel = logLevel;
@@ -91,7 +119,13 @@ classdef clog < handle
 
 %% Private Methods %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods (Access = private)
-        
+        function self = clog( logpath )
+            if(nargin > 0)
+                path = logpath;
+                self.setFilename(path);
+            end
+        end
+
 %% VerboseLog %%       
         function verboseLog(self,level,message,varargin)           
             
@@ -117,7 +151,23 @@ classdef clog < handle
             if( self.logLevel <= level )
                 fprintf('%s:%s\n', lvlStr, self.getMessage(message, varargin{:}));
             end
-
+            
+            % Skip writing to file, if file log level is too high
+            if(self.fileLogLevel > level)
+                return;
+            end 
+            
+            % Append new log to log file
+            try
+                fid = fopen(self.fullpath,'a');
+                fprintf(fid,'%s %s: %s\n' ...                    
+                    , datestr(now,'yyyy-mm-dd HH:MM:SS,FFF') ...
+                    , lvlStr ...
+                    , self.getMessage(message, varargin{:}));
+                fclose(fid);
+            catch ME
+                display(ME);
+            end 
         end
         
 %% GetMessage %%       
