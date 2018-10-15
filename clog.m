@@ -88,7 +88,19 @@ classdef clog < handle
 %% The public Logging methods %%
         function log(self, varargin)
             lvlStr = 'LOG';
-            fprintf('%s:%s\n', lvlStr, self.getMessage(varargin{:}));
+            fprintf('%s: %s\n', lvlStr, self.getMessage(varargin{:}));
+
+            % Append new log to log file
+            try
+                fid = fopen(self.fullpath,'a');
+                fprintf(fid,'%s %s: %s\n' ...                    
+                    , datestr(now,'yyyy-mm-dd HH:MM:SS,FFF') ...
+                    , lvlStr ...
+                    , self.getMessage(message, varargin{:}));
+                fclose(fid);
+            catch ME
+                display(ME);
+            end             
         end
         
         function trace(self, varargin)
@@ -149,7 +161,7 @@ classdef clog < handle
             
             % Write to Console based on log level
             if( self.logLevel <= level )
-                fprintf('%s:%s\n', lvlStr, self.getMessage(message, varargin{:}));
+                fprintf('%s: %s\n', lvlStr, self.getMessage(message, varargin{:}));
             end
             
             % Skip writing to file, if file log level is too high
