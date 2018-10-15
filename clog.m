@@ -38,7 +38,7 @@ classdef clog < handle
  
 %% Public Static Methods Section %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
     methods (Static)
-        function obj = getLogger( ~ )
+        function obj = getLogger( ~ )           
             persistent logger;
             if isempty(logger) || ~isvalid(logger)
                 logger = clog( );
@@ -58,33 +58,33 @@ classdef clog < handle
         
 
 %% The public Logging methods %%
-        function log(self, scriptName, message)
+        function log(self, varargin)
             lvlStr = 'LOG';
-            fprintf('%s:%s:%s\n', lvlStr, scriptName, message);
+            fprintf('%s:%s\n', lvlStr, self.getMessage(varargin{:}));
         end
         
-        function trace(self, scriptName, message)
-            self.verboseLog(self.TRACE, scriptName, message);
+        function trace(self, varargin)
+            self.verboseLog(self.TRACE, varargin{:});
         end
 
-        function debug(self, scriptName, message)
-            self.verboseLog(self.DEBUG, scriptName, message);
+        function debug(self, varargin)
+            self.verboseLog(self.DEBUG, varargin{:});
         end
         
-        function info(self, scriptName, message)
-            self.verboseLog(self.INFO, scriptName, message);
+        function info(self, varargin)
+            self.verboseLog(self.INFO, varargin{:});
         end
         
-        function warn(self, scriptName, message)
-            self.verboseLog(self.WARN, scriptName, message);
+        function warn(self, varargin)
+            self.verboseLog(self.WARN, varargin{:});
         end
 
-        function error(self, scriptName, message)
-            self.verboseLog(self.ERROR, scriptName, message);
+        function error(self, varargin)
+            self.verboseLog(self.ERROR, varargin{:});
         end
         
-        function fatal(self, scriptName, message)
-            self.verboseLog(self.FATAL, scriptName, message);
+        function fatal(self, varargin)
+            self.verboseLog(self.FATAL, varargin{:});
         end      
         
     end
@@ -93,7 +93,7 @@ classdef clog < handle
     methods (Access = private)
         
 %% VerboseLog %%       
-        function verboseLog(self,level,scriptName,message)            
+        function verboseLog(self,level,message,varargin)           
             
             % set up our level string
             switch level
@@ -115,9 +115,22 @@ classdef clog < handle
             
             % Write to Console based on log level
             if( self.logLevel <= level )
-                fprintf('%s:%s:%s\n', lvlStr, scriptName, message);
+                fprintf('%s:%s\n', lvlStr, self.getMessage(message, varargin{:}));
             end
 
+        end
+        
+%% GetMessage %%       
+        function message = getMessage(~, message, varargin)
+
+            if nargin > 2
+                message = sprintf(message, varargin{:});
+            end
+
+            [rows, ~] = size(message);
+            if rows > 1
+                message = sprintf(' %s', evalc('disp(message)'));
+            end
         end
 
     end
